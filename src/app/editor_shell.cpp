@@ -1,20 +1,50 @@
 #include "editor_shell.h"
 
+// clang-format off
 #include "panels/dummy_panels.h"
 #include "theme.h"
 
 #include "imgui_internal.h"
+// clang-format on
 
 #include <cmath>
 
 namespace
 {
-  constexpr float TOP_BAR_HEIGHT = 32.0f;
-  constexpr float STATUS_BAR_HEIGHT = 26.0f;
+  float get_accent_bar_height()
+  {
+    return std::ceil(ImGui::GetFontSize() * 0.18f);
+  }
 
-  void draw_chip(
-    const char* label,
-    const ImVec4& color)
+  ImVec2 get_chrome_padding()
+  {
+    const ImGuiStyle& style = ImGui::GetStyle();
+    return ImVec2(style.WindowPadding.x, style.FramePadding.y);
+  }
+
+  float get_top_bar_height()
+  {
+    const ImGuiStyle& style = ImGui::GetStyle();
+    return std::ceil(ImGui::GetTextLineHeight() + style.FramePadding.y * 2.0f + style.WindowPadding.y * 2.0f);
+  }
+
+  float get_status_bar_height()
+  {
+    const ImGuiStyle& style = ImGui::GetStyle();
+    return std::ceil(ImGui::GetTextLineHeight() + style.WindowPadding.y * 2.0f + style.FramePadding.y);
+  }
+
+  float get_top_bar_trailing_width()
+  {
+    return std::ceil(ImGui::GetFontSize() * 21.0f);
+  }
+
+  float get_status_bar_trailing_width()
+  {
+    return std::ceil(ImGui::GetFontSize() * 22.0f);
+  }
+
+  void draw_chip(const char* label, const ImVec4& color)
   {
     ImGui::PushStyleColor(ImGuiCol_Button, color);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
@@ -43,22 +73,23 @@ void app::editor_shell::draw()
 void app::editor_shell::draw_top_bar()
 {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
+  const float top_bar_height = get_top_bar_height();
 
   ImGui::SetNextWindowPos(viewport->Pos, ImGuiCond_Always);
-  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, TOP_BAR_HEIGHT), ImGuiCond_Always);
+  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, top_bar_height), ImGuiCond_Always);
 
-  ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove |
-    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
-    ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar;
+  ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove
+    | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings
+    | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar;
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 4.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, get_chrome_padding());
   ImGui::Begin("TOP_BAR", nullptr, flags);
   ImGui::PopStyleVar(2);
 
   ImDrawList* draw_list = ImGui::GetWindowDrawList();
   ImVec2 min = ImGui::GetWindowPos();
-  ImVec2 max = ImVec2(min.x + ImGui::GetWindowWidth(), min.y + 3.0f);
+  ImVec2 max = ImVec2(min.x + ImGui::GetWindowWidth(), min.y + get_accent_bar_height());
   draw_list->AddRectFilled(min, max, IM_COL32(96, 150, 255, 255));
 
   if (ImGui::BeginMenuBar())
@@ -93,7 +124,7 @@ void app::editor_shell::draw_top_bar()
       ImGui::EndMenu();
     }
 
-    float trailing_width = 310.0f;
+    float trailing_width = get_top_bar_trailing_width();
     float cursor_x = ImGui::GetWindowContentRegionMax().x - trailing_width;
     if (cursor_x > ImGui::GetCursorPosX())
     {
@@ -115,18 +146,18 @@ void app::editor_shell::draw_top_bar()
 void app::editor_shell::draw_status_bar()
 {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
+  const float status_bar_height = get_status_bar_height();
 
   ImGui::SetNextWindowPos(
-    ImVec2(viewport->Pos.x, viewport->Pos.y + viewport->Size.y - STATUS_BAR_HEIGHT),
-    ImGuiCond_Always);
-  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, STATUS_BAR_HEIGHT), ImGuiCond_Always);
+    ImVec2(viewport->Pos.x, viewport->Pos.y + viewport->Size.y - status_bar_height), ImGuiCond_Always);
+  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, status_bar_height), ImGuiCond_Always);
 
-  ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove |
-    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings |
-    ImGuiWindowFlags_NoTitleBar;
+  ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove
+    | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings
+    | ImGuiWindowFlags_NoTitleBar;
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 4.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, get_chrome_padding());
   ImGui::Begin("STATUS_BAR", nullptr, flags);
   ImGui::PopStyleVar(2);
 
@@ -144,7 +175,7 @@ void app::editor_shell::draw_status_bar()
   ImGui::SameLine();
   ImGui::TextDisabled("clang frontend: warm");
 
-  float right_edge = ImGui::GetWindowContentRegionMax().x - 310.0f;
+  float right_edge = ImGui::GetWindowContentRegionMax().x - get_status_bar_trailing_width();
   if (right_edge > ImGui::GetCursorPosX())
   {
     ImGui::SetCursorPosX(right_edge);
@@ -160,18 +191,17 @@ void app::editor_shell::draw_status_bar()
 void app::editor_shell::draw_dockspace()
 {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
+  const float top_bar_height = get_top_bar_height();
+  const float status_bar_height = get_status_bar_height();
 
-  ImGui::SetNextWindowPos(
-    ImVec2(viewport->Pos.x, viewport->Pos.y + TOP_BAR_HEIGHT),
-    ImGuiCond_Always);
+  ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + top_bar_height), ImGuiCond_Always);
   ImGui::SetNextWindowSize(
-    ImVec2(viewport->Size.x, viewport->Size.y - TOP_BAR_HEIGHT - STATUS_BAR_HEIGHT),
-    ImGuiCond_Always);
+    ImVec2(viewport->Size.x, viewport->Size.y - top_bar_height - status_bar_height), ImGuiCond_Always);
   ImGui::SetNextWindowViewport(viewport->ID);
 
-  ImGuiWindowFlags flags = ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse |
-    ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus |
-    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar;
+  ImGuiWindowFlags flags = ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse
+    | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize
+    | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar;
 
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -239,7 +269,7 @@ void app::editor_shell::draw_panel_windows()
   panels::draw_editor_panel(mono_font);
   ImGui::End();
 
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImGui::GetStyle().FramePadding);
   ImGui::Begin("Preview");
   panels::draw_preview_panel(mono_font);
   ImGui::End();
@@ -268,10 +298,12 @@ void app::editor_shell::draw_panel_windows()
   if (!m_profiler_window_initialized)
   {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const float font_size = ImGui::GetFontSize();
+    const float frame_height = ImGui::GetFrameHeight();
     ImGui::SetNextWindowPos(
-      ImVec2(viewport->Pos.x + viewport->Size.x - 360.0f, viewport->Pos.y + 84.0f),
+      ImVec2(viewport->Pos.x + viewport->Size.x - font_size * 22.5f, viewport->Pos.y + frame_height * 3.0f),
       ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(320.0f, 188.0f), ImGuiCond_Once);
+    ImGui::SetNextWindowSize(ImVec2(font_size * 20.0f, frame_height * 8.0f), ImGuiCond_Once);
     m_profiler_window_initialized = true;
   }
 
