@@ -34,3 +34,20 @@ By owning the entire pipeline, the project can:
 - A custom assembler and linker for the x64 Windows target.
 - A custom debug symbol format tailored to live inspection and precise stepping.
 - A custom C standard library suitable for the project runtime and tooling goals.
+
+## Current prototype
+
+The repository now includes a first ImGui-based shell for the editor UI. It is a standalone desktop app using GLFW, the OpenGL backend, and Dear ImGui from the docking branch.
+
+The current window is intentionally a fake IDE surface: explorer, editor, preview, assembly, watch, console, memory, and profiler panels are placeholder content meant to establish the visual direction and docking behavior.
+
+Docking and multi-viewports are enabled, so any docked tab can be dragged out into a native OS window.
+
+## Build
+
+```powershell
+cmake -S . -B build
+cmake --build build
+```
+
+The executable will be generated in the build directory. The first configure step downloads GLFW and Dear ImGui via CMake FetchContent.
