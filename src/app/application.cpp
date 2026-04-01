@@ -1,27 +1,52 @@
 #include "application.h"
 
+// clang-format off
 #include "editor_shell.h"
 #include "theme.h"
 
+#include "GLFW/glfw3.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
 #include "backends/imgui_impl_opengl3_loader.h"
-#include "GLFW/glfw3.h"
 #include "imgui.h"
+// clang-format on
 
 namespace
 {
-  void glfw_error_callback(
-    int32_t error,
-    const char* description)
+  constexpr float MIN_DPI_SCALE = 1.0f;
+  constexpr float MAX_DPI_SCALE = 3.0f;
+
+  void glfw_error_callback(int32_t error, const char* description)
   {
-    (void)error;
-    (void)description;
+    (void) error;
+    (void) description;
+  }
+
+  float sanitize_dpi_scale(float x_scale, float y_scale)
+  {
+    const float larger_scale = (x_scale > y_scale) ? x_scale : y_scale;
+    if (larger_scale <= 0.0f)
+    {
+      return 1.0f;
+    }
+
+    if (larger_scale < MIN_DPI_SCALE)
+    {
+      return MIN_DPI_SCALE;
+    }
+
+    if (larger_scale > MAX_DPI_SCALE)
+    {
+      return MAX_DPI_SCALE;
+    }
+
+    return larger_scale;
   }
 }
 
 app::application::application()
   : m_glfw_initialized(false)
+  , m_dpi_scale(1.0f)
   , m_window(nullptr)
   , m_editor_shell(nullptr)
   , m_glsl_version("#version 330")
@@ -69,6 +94,7 @@ bool app::application::init_window()
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+  glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 
   m_window = glfwCreateWindow(1600, 980, "mIDE", nullptr, nullptr);
   if (m_window == nullptr)
@@ -77,6 +103,14 @@ bool app::application::init_window()
     m_glfw_initialized = false;
     return false;
   }
+
+  glfwSetWindowUserPointer(m_window, this);
+  glfwSetWindowContentScaleCallback(m_window, glfw_window_content_scale_callback);
+
+  float window_x_scale = 1.0f;
+  float window_y_scale = 1.0f;
+  glfwGetWindowContentScale(m_window, &window_x_scale, &window_y_scale);
+  m_dpi_scale = sanitize_dpi_scale(window_x_scale, window_y_scale);
 
   glfwMakeContextCurrent(m_window);
   glfwSwapInterval(1);
@@ -92,11 +126,13 @@ bool app::application::init_imgui()
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+  io.ConfigDpiScaleFonts = true;
+  io.ConfigDpiScaleViewports = true;
   io.ConfigWindowsMoveFromTitleBarOnly = true;
   io.IniFilename = "imgui.ini";
 
   app::theme::configure();
-  app::theme::apply();
+  update_dpi_scale(m_dpi_scale, m_dpi_scale);
 
   if (!ImGui_ImplGlfw_InitForOpenGL(m_window, true))
   {
@@ -110,6 +146,27 @@ bool app::application::init_imgui()
 
   m_editor_shell = new editor_shell();
   return true;
+}
+
+void app::application::glfw_window_content_scale_callback(GLFWwindow* window, float x_scale, float y_scale)
+{
+  app::application* instance = static_cast<app::application*>(glfwGetWindowUserPointer(window));
+  if (instance != nullptr)
+  {
+    instance->update_dpi_scale(x_scale, y_scale);
+  }
+}
+
+void app::application::update_dpi_scale(float x_scale, float y_scale)
+{
+  m_dpi_scale = sanitize_dpi_scale(x_scale, y_scale);
+
+  if (ImGui::GetCurrentContext() == nullptr)
+  {
+    return;
+  }
+
+  app::theme::apply(m_dpi_scale);
 }
 
 void app::application::render_frame()
@@ -160,6 +217,8 @@ void app::application::shutdown()
 
   if (m_window != nullptr)
   {
+    glfwSetWindowContentScaleCallback(m_window, nullptr);
+    glfwSetWindowUserPointer(m_window, nullptr);
     glfwDestroyWindow(m_window);
     m_window = nullptr;
   }

@@ -9,12 +9,14 @@ namespace app::theme
 {
   namespace
   {
+    constexpr float BASE_UI_FONT_SIZE = 15.0f;
+    constexpr float BASE_MONO_FONT_SIZE = 14.0f;
+
+    float current_scale = 1.0f;
     ImFont* ui_font = nullptr;
     ImFont* mono_font = nullptr;
 
-    ImFont* try_load_font(
-      const std::array<const char*, 4>& candidates,
-      float size_pixels)
+    ImFont* try_load_font(const std::array<const char*, 4>& candidates, float size_pixels)
     {
       ImGuiIO& io = ImGui::GetIO();
 
@@ -34,6 +36,16 @@ namespace app::theme
 
       return nullptr;
     }
+
+    float sanitize_scale(float scale)
+    {
+      if (scale <= 0.0f)
+      {
+        return 1.0f;
+      }
+
+      return (scale > 1.0f) ? scale : 1.0f;
+    }
   }
 
   void configure()
@@ -47,7 +59,7 @@ namespace app::theme
         "C:/Windows/Fonts/trebuc.ttf",
         "C:/Windows/Fonts/arial.ttf",
       },
-      17.0f);
+      BASE_UI_FONT_SIZE);
 
     mono_font = try_load_font(
       {
@@ -56,7 +68,7 @@ namespace app::theme
         "C:/Windows/Fonts/cour.ttf",
         "C:/Windows/Fonts/lucon.ttf",
       },
-      15.0f);
+      BASE_MONO_FONT_SIZE);
 
     if (ui_font == nullptr)
     {
@@ -71,8 +83,10 @@ namespace app::theme
     io.FontDefault = ui_font;
   }
 
-  void apply()
+  void apply(float scale)
   {
+    current_scale = sanitize_scale(scale);
+
     ImGuiStyle& style = ImGui::GetStyle();
     style = ImGuiStyle();
 
@@ -153,6 +167,15 @@ namespace app::theme
     style.SeparatorTextBorderSize = 1.0f;
     style.SeparatorTextAlign = ImVec2(0.0f, 0.5f);
     style.DisplaySafeAreaPadding = ImVec2(0.0f, 0.0f);
+
+    style.ScaleAllSizes(current_scale);
+    style.FontScaleMain = 1.0f;
+    style.FontScaleDpi = current_scale;
+  }
+
+  float get_scale()
+  {
+    return current_scale;
   }
 
   ImFont* get_mono_font()
