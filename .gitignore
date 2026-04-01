@@ -1,2 +1,5 @@
 # Build output
 build/
+
+# ImGui config
+imgui.ini
