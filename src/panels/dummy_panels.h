@@ -11,7 +11,6 @@ namespace panels
   void draw_inspector_panel();
   void draw_memory_panel();
   void draw_outline_panel();
-  void draw_preview_panel(ImFont* mono_font);
   void draw_profiler_panel();
   void draw_watch_panel(ImFont* mono_font);
 }
