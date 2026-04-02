@@ -61,7 +61,14 @@ add_executable(mide
   src/app/application.cpp
   src/app/editor_shell.cpp
   src/app/theme.cpp
-  src/panels/dummy_panels.cpp)
+  src/panels/assembly_panel.cpp
+  src/panels/console_panel.cpp
+  src/panels/editor_panel.cpp
+  src/panels/explorer_panel.cpp
+  src/panels/memory_panel.cpp
+  src/panels/outline_panel.cpp
+  src/panels/panel_common.cpp
+  src/panels/watch_panel.cpp)
 
 target_include_directories(mide
   PRIVATE

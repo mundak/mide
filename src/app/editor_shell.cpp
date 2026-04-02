@@ -1,11 +1,8 @@
 #include "editor_shell.h"
 
-// clang-format off
-#include "panels/dummy_panels.h"
-#include "theme.h"
-
 #include "imgui_internal.h"
-// clang-format on
+#include "panels/panels.h"
+#include "theme.h"
 
 #include <cmath>
 
@@ -142,6 +139,8 @@ void app::editor_shell::draw_status_bar()
   ImGui::TextDisabled("main.c");
   ImGui::SameLine();
   ImGui::TextDisabled("Ln 42, Col 18");
+  ImGui::SameLine(viewport->Size.x - get_status_bar_trailing_width());
+  ImGui::TextDisabled("%.1f ms  %.0f FPS", frame_time, ImGui::GetIO().Framerate);
 
   ImGui::End();
 }
