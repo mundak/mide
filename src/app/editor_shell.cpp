@@ -240,7 +240,6 @@ void app::editor_shell::ensure_layout(ImGuiID dockspace_id)
   ImGui::DockBuilderDockWindow("Outline", dock_left_id);
 
   ImGui::DockBuilderDockWindow("Editor", dock_center_id);
-  ImGui::DockBuilderDockWindow("Preview", dock_center_id);
 
   ImGui::DockBuilderDockWindow("Inspector", dock_right_id);
   ImGui::DockBuilderDockWindow("Watch", dock_right_id);
@@ -268,12 +267,6 @@ void app::editor_shell::draw_panel_windows()
   ImGui::Begin("Editor");
   panels::draw_editor_panel(mono_font);
   ImGui::End();
-
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImGui::GetStyle().FramePadding);
-  ImGui::Begin("Preview");
-  panels::draw_preview_panel(mono_font);
-  ImGui::End();
-  ImGui::PopStyleVar(1);
 
   ImGui::Begin("Inspector");
   panels::draw_inspector_panel();

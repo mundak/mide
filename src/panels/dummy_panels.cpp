@@ -31,43 +31,40 @@ namespace
     ImU32 color;
   };
 
-  constexpr std::array<source_line, 15> SOURCE_LINES
-  {{
-    {1, "#include <stdint.h>", ImVec4(0.63f, 0.77f, 1.00f, 1.00f), false},
-    {2, "", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-    {3, "static uint32_t frame_counter = 0;", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-    {4, "", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-    {5, "int32_t compile_step(struct unit* unit)", ImVec4(0.51f, 0.76f, 1.00f, 1.00f), false},
-    {6, "{", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-    {7, "  if (unit == nullptr)", ImVec4(0.51f, 0.76f, 1.00f, 1.00f), false},
-    {8, "  {", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-    {9, "    return -1;", ImVec4(0.93f, 0.72f, 0.45f, 1.00f), false},
-    {10, "  }", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-    {11, "", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-    {12, "  unit->cache_state = CACHE_STATE_WARM;", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), true},
-    {13, "  frame_counter += unit->dirty_functions;", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-    {14, "  return emit_live_assembly(unit);", ImVec4(0.93f, 0.72f, 0.45f, 1.00f), false},
-    {15, "}", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false},
-  }};
+  constexpr std::array<source_line, 15> SOURCE_LINES { {
+    { 1, "#include <stdint.h>", ImVec4(0.63f, 0.77f, 1.00f, 1.00f), false },
+    { 2, "", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+    { 3, "static uint32_t frame_counter = 0;", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+    { 4, "", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+    { 5, "int32_t compile_step(struct unit* unit)", ImVec4(0.51f, 0.76f, 1.00f, 1.00f), false },
+    { 6, "{", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+    { 7, "  if (unit == nullptr)", ImVec4(0.51f, 0.76f, 1.00f, 1.00f), false },
+    { 8, "  {", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+    { 9, "    return -1;", ImVec4(0.93f, 0.72f, 0.45f, 1.00f), false },
+    { 10, "  }", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+    { 11, "", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+    { 12, "  unit->cache_state = CACHE_STATE_WARM;", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), true },
+    { 13, "  frame_counter += unit->dirty_functions;", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+    { 14, "  return emit_live_assembly(unit);", ImVec4(0.93f, 0.72f, 0.45f, 1.00f), false },
+    { 15, "}", ImVec4(0.90f, 0.90f, 0.95f, 1.00f), false },
+  } };
 
-  constexpr std::array<assembly_row, 7> ASSEMBLY_ROWS
-  {{
-    {"00007FF6`18001040", "48 89 5C 24 08", "mov [rsp+08h], rbx", "prologue", false},
-    {"00007FF6`18001045", "48 83 EC 20", "sub rsp, 20h", "stack frame", false},
-    {"00007FF6`18001049", "48 85 C9", "test rcx, rcx", "unit == nullptr", false},
-    {"00007FF6`1800104C", "74 19", "je 00007FF6`18001067", "early exit", false},
-    {"00007FF6`1800104E", "83 41 14 01", "add dword ptr [rcx+14h], 1", "cache_state", true},
-    {"00007FF6`18001052", "8B 41 18", "mov eax, dword ptr [rcx+18h]", "dirty_functions", false},
-    {"00007FF6`18001055", "E8 96 02 00 00", "call emit_live_assembly", "live sync", false},
-  }};
+  constexpr std::array<assembly_row, 7> ASSEMBLY_ROWS { {
+    { "00007FF6`18001040", "48 89 5C 24 08", "mov [rsp+08h], rbx", "prologue", false },
+    { "00007FF6`18001045", "48 83 EC 20", "sub rsp, 20h", "stack frame", false },
+    { "00007FF6`18001049", "48 85 C9", "test rcx, rcx", "unit == nullptr", false },
+    { "00007FF6`1800104C", "74 19", "je 00007FF6`18001067", "early exit", false },
+    { "00007FF6`1800104E", "83 41 14 01", "add dword ptr [rcx+14h], 1", "cache_state", true },
+    { "00007FF6`18001052", "8B 41 18", "mov eax, dword ptr [rcx+18h]", "dirty_functions", false },
+    { "00007FF6`18001055", "E8 96 02 00 00", "call emit_live_assembly", "live sync", false },
+  } };
 
-  constexpr std::array<segment, 4> MEMORY_SEGMENTS
-  {{
-    {"Code", 0.34f, IM_COL32(71, 125, 230, 255)},
-    {"Symbols", 0.18f, IM_COL32(84, 196, 112, 255)},
-    {"AST", 0.22f, IM_COL32(224, 167, 74, 255)},
-    {"Scratch", 0.11f, IM_COL32(198, 108, 208, 255)},
-  }};
+  constexpr std::array<segment, 4> MEMORY_SEGMENTS { {
+    { "Code", 0.34f, IM_COL32(71, 125, 230, 255) },
+    { "Symbols", 0.18f, IM_COL32(84, 196, 112, 255) },
+    { "AST", 0.22f, IM_COL32(224, 167, 74, 255) },
+    { "Scratch", 0.11f, IM_COL32(198, 108, 208, 255) },
+  } };
 
   void push_mono_font(ImFont* mono_font)
   {
@@ -85,77 +82,13 @@ namespace
     }
   }
 
-  void draw_stat_pair(
-    const char* label,
-    const char* value)
+  void draw_stat_pair(const char* label, const char* value)
   {
     ImGui::TableNextRow();
     ImGui::TableSetColumnIndex(0);
     ImGui::TextDisabled("%s", label);
     ImGui::TableSetColumnIndex(1);
     ImGui::Text("%s", value);
-  }
-
-  void draw_grid_canvas()
-  {
-    ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
-    ImVec2 canvas_size = ImGui::GetContentRegionAvail();
-    if (canvas_size.x < 64.0f || canvas_size.y < 64.0f)
-    {
-      return;
-    }
-
-    ImVec2 canvas_max(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y);
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-    draw_list->AddRectFilled(canvas_pos, canvas_max, IM_COL32(18, 21, 27, 255), 4.0f);
-    draw_list->AddRectFilledMultiColor(
-      canvas_pos,
-      canvas_max,
-      IM_COL32(22, 27, 35, 180),
-      IM_COL32(22, 27, 35, 32),
-      IM_COL32(12, 16, 22, 180),
-      IM_COL32(12, 16, 22, 140));
-
-    for (float x = canvas_pos.x; x < canvas_max.x; x += 16.0f)
-    {
-      ImU32 color = (static_cast<int32_t>(x - canvas_pos.x) % 64 == 0)
-        ? IM_COL32(78, 88, 102, 96)
-        : IM_COL32(53, 60, 70, 54);
-      draw_list->AddLine(ImVec2(x, canvas_pos.y), ImVec2(x, canvas_max.y), color, 1.0f);
-    }
-
-    for (float y = canvas_pos.y; y < canvas_max.y; y += 16.0f)
-    {
-      ImU32 color = (static_cast<int32_t>(y - canvas_pos.y) % 64 == 0)
-        ? IM_COL32(78, 88, 102, 96)
-        : IM_COL32(53, 60, 70, 54);
-      draw_list->AddLine(ImVec2(canvas_pos.x, y), ImVec2(canvas_max.x, y), color, 1.0f);
-    }
-
-    ImVec2 chip_min(canvas_pos.x + 24.0f, canvas_pos.y + 28.0f);
-    ImVec2 chip_max(chip_min.x + 184.0f, chip_min.y + 72.0f);
-    draw_list->AddRectFilled(chip_min, chip_max, IM_COL32(34, 39, 49, 240), 6.0f);
-    draw_list->AddRect(chip_min, chip_max, IM_COL32(114, 146, 255, 180), 6.0f, 0, 1.0f);
-    draw_list->AddText(ImVec2(chip_min.x + 14.0f, chip_min.y + 12.0f), IM_COL32(230, 235, 244, 255), "live parse graph");
-    draw_list->AddText(ImVec2(chip_min.x + 14.0f, chip_min.y + 36.0f), IM_COL32(131, 212, 145, 255), "entry -> fold constants -> lower x64");
-
-    ImVec2 chip_two_min(canvas_pos.x + canvas_size.x * 0.56f, canvas_pos.y + canvas_size.y * 0.24f);
-    ImVec2 chip_two_max(chip_two_min.x + 176.0f, chip_two_min.y + 92.0f);
-    draw_list->AddRectFilled(chip_two_min, chip_two_max, IM_COL32(30, 35, 44, 240), 6.0f);
-    draw_list->AddRect(chip_two_min, chip_two_max, IM_COL32(104, 192, 122, 180), 6.0f, 0, 1.0f);
-    draw_list->AddText(ImVec2(chip_two_min.x + 14.0f, chip_two_min.y + 12.0f), IM_COL32(233, 236, 242, 255), "watchpoint");
-    draw_list->AddText(ImVec2(chip_two_min.x + 14.0f, chip_two_min.y + 38.0f), IM_COL32(255, 197, 107, 255), "frame_counter");
-    draw_list->AddText(ImVec2(chip_two_min.x + 14.0f, chip_two_min.y + 60.0f), IM_COL32(164, 173, 188, 255), "write observed at compile_step:12");
-
-    draw_list->AddBezierCubic(
-      ImVec2(chip_min.x + 184.0f, chip_min.y + 48.0f),
-      ImVec2(chip_min.x + 280.0f, chip_min.y + 20.0f),
-      ImVec2(chip_two_min.x - 80.0f, chip_two_min.y + 20.0f),
-      ImVec2(chip_two_min.x, chip_two_min.y + 38.0f),
-      IM_COL32(154, 166, 185, 180),
-      2.0f);
-
-    ImGui::InvisibleButton("preview_canvas", canvas_size);
   }
 }
 
@@ -268,50 +201,6 @@ void panels::draw_editor_panel(ImFont* mono_font)
   }
 }
 
-void panels::draw_preview_panel(ImFont* mono_font)
-{
-  if (ImGui::BeginTabBar("preview_tabs"))
-  {
-    if (ImGui::BeginTabItem("Live Graph"))
-    {
-      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.20f, 0.22f, 0.27f, 1.0f));
-      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.28f, 0.31f, 0.40f, 1.0f));
-      ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.35f, 0.38f, 0.50f, 1.0f));
-      ImGui::Button("AST");
-      ImGui::SameLine();
-      ImGui::Button("CFG");
-      ImGui::SameLine();
-      ImGui::Button("IR");
-      ImGui::SameLine();
-      ImGui::Button("REGISTERS");
-      ImGui::PopStyleColor(3);
-      ImGui::Separator();
-      draw_grid_canvas();
-      ImGui::EndTabItem();
-    }
-
-    if (ImGui::BeginTabItem("Registers"))
-    {
-      push_mono_font(mono_font);
-      ImGui::Columns(2, nullptr, false);
-      ImGui::Text("rax  00000000000000B7");
-      ImGui::Text("rbx  00007FF618002000");
-      ImGui::Text("rcx  000000C4F84FF960");
-      ImGui::Text("rdx  0000000000000012");
-      ImGui::NextColumn();
-      ImGui::Text("r8   0000000000000001");
-      ImGui::Text("r9   00007FF618004A10");
-      ImGui::Text("rip  00007FF618001052");
-      ImGui::Text("rsp  000000C4F84FF8D0");
-      ImGui::Columns(1);
-      pop_mono_font(mono_font);
-      ImGui::EndTabItem();
-    }
-
-    ImGui::EndTabBar();
-  }
-}
-
 void panels::draw_inspector_panel()
 {
   static int32_t optimization_level = 2;
@@ -388,9 +277,10 @@ void panels::draw_assembly_panel(ImFont* mono_font)
 {
   push_mono_font(mono_font);
   if (ImGui::BeginTable(
-    "assembly_table",
-    4,
-    ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp))
+        "assembly_table",
+        4,
+        ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY
+          | ImGuiTableFlags_SizingStretchProp))
   {
     ImGui::TableSetupColumn("address", ImGuiTableColumnFlags_WidthStretch, 1.8f);
     ImGui::TableSetupColumn("bytes", ImGuiTableColumnFlags_WidthStretch, 1.2f);
@@ -452,10 +342,7 @@ void panels::draw_memory_panel()
   {
     float segment_width = width * item.value;
     draw_list->AddRectFilled(
-      ImVec2(start.x + offset, start.y),
-      ImVec2(start.x + offset + segment_width, start.y + height),
-      item.color,
-      4.0f);
+      ImVec2(start.x + offset, start.y), ImVec2(start.x + offset + segment_width, start.y + height), item.color, 4.0f);
     offset += segment_width;
   }
 
