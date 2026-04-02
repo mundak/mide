@@ -11,10 +11,15 @@
 #include "imgui.h"
 // clang-format on
 
+#include <chrono>
+#include <thread>
+
 namespace
 {
   constexpr float MIN_DPI_SCALE = 1.0f;
   constexpr float MAX_DPI_SCALE = 3.0f;
+  constexpr double TARGET_FRAME_RATE = 15.0;
+  const std::chrono::duration<double> TARGET_FRAME_INTERVAL(1.0 / TARGET_FRAME_RATE);
 
   void glfw_error_callback(int32_t error, const char* description)
   {
@@ -70,10 +75,23 @@ int32_t app::application::run()
     return 1;
   }
 
+  std::chrono::steady_clock::time_point next_frame_time = std::chrono::steady_clock::now();
   while (!glfwWindowShouldClose(m_window))
   {
     glfwPollEvents();
     render_frame();
+
+    next_frame_time += std::chrono::duration_cast<std::chrono::steady_clock::duration>(TARGET_FRAME_INTERVAL);
+
+    const std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+    if (next_frame_time > now)
+    {
+      std::this_thread::sleep_until(next_frame_time);
+    }
+    else
+    {
+      next_frame_time = now;
+    }
   }
 
   return 0;

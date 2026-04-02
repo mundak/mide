@@ -28,7 +28,7 @@ namespace
   {
     const char* label;
     float value;
-    ImU32 color;
+    uint32_t color;
   };
 
   constexpr std::array<source_line, 15> SOURCE_LINES { {
@@ -157,13 +157,6 @@ void panels::draw_editor_panel(ImFont* mono_font)
   {
     if (ImGui::BeginTabItem("main.c"))
     {
-      ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.18f, 0.55f, 0.38f, 0.90f));
-      ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.21f, 0.60f, 0.42f, 0.90f));
-      ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.24f, 0.66f, 0.46f, 0.90f));
-      ImGui::Button("LIVE PARSE");
-      ImGui::PopStyleColor(3);
-      ImGui::SameLine();
-      ImGui::TextDisabled("cache warm | AST + x64 in sync");
       ImGui::Separator();
 
       push_mono_font(mono_font);
@@ -198,51 +191,6 @@ void panels::draw_editor_panel(ImFont* mono_font)
     }
 
     ImGui::EndTabBar();
-  }
-}
-
-void panels::draw_inspector_panel()
-{
-  static int32_t optimization_level = 2;
-  static bool emit_debug_symbols = true;
-  static bool live_parse_enabled = true;
-
-  if (ImGui::CollapsingHeader("Document", ImGuiTreeNodeFlags_DefaultOpen))
-  {
-    if (ImGui::BeginTable("document_table", 2, ImGuiTableFlags_SizingFixedFit))
-    {
-      draw_stat_pair("Path", "src/main.c");
-      draw_stat_pair("Target", "x64-windows-msvc");
-      draw_stat_pair("Dirty Funcs", "4");
-      draw_stat_pair("Last Build", "00:00:18 ago");
-      ImGui::EndTable();
-    }
-  }
-
-  if (ImGui::CollapsingHeader("Build", ImGuiTreeNodeFlags_DefaultOpen))
-  {
-    ImGui::Checkbox("Live Parse", &live_parse_enabled);
-    ImGui::Checkbox("Emit Debug Symbols", &emit_debug_symbols);
-    ImGui::SliderInt("Optimization", &optimization_level, 0, 3, "O%d");
-    ImGui::SeparatorText("pipeline");
-    ImGui::TextDisabled("lexer");
-    ImGui::ProgressBar(1.0f, ImVec2(-1.0f, 0.0f), "complete");
-    ImGui::TextDisabled("parser");
-    ImGui::ProgressBar(0.82f, ImVec2(-1.0f, 0.0f), "rebuilding");
-    ImGui::TextDisabled("x64 emitter");
-    ImGui::ProgressBar(0.63f, ImVec2(-1.0f, 0.0f), "queued");
-  }
-
-  if (ImGui::CollapsingHeader("Cursor", ImGuiTreeNodeFlags_DefaultOpen))
-  {
-    if (ImGui::BeginTable("cursor_table", 2, ImGuiTableFlags_SizingFixedFit))
-    {
-      draw_stat_pair("Function", "compile_step");
-      draw_stat_pair("Source Line", "12");
-      draw_stat_pair("Assembly", "00007FF6`1800104E");
-      draw_stat_pair("Registers", "rax, rcx");
-      ImGui::EndTable();
-    }
   }
 }
 
@@ -360,20 +308,4 @@ void panels::draw_memory_panel()
   ImGui::SeparatorText("allocators");
   ImGui::ProgressBar(0.72f, ImVec2(-1.0f, 0.0f), "arena 72%");
   ImGui::ProgressBar(0.39f, ImVec2(-1.0f, 0.0f), "symbol pool 39%");
-}
-
-void panels::draw_profiler_panel()
-{
-  ImGui::TextDisabled("compile timeline");
-  ImGui::Separator();
-  ImGui::Text("front-end");
-  ImGui::ProgressBar(0.84f, ImVec2(-1.0f, 0.0f), "6.4 ms");
-  ImGui::Text("assembly mapping");
-  ImGui::ProgressBar(0.58f, ImVec2(-1.0f, 0.0f), "4.1 ms");
-  ImGui::Text("debug metadata");
-  ImGui::ProgressBar(0.31f, ImVec2(-1.0f, 0.0f), "1.7 ms");
-  ImGui::SeparatorText("hot path");
-  ImGui::BulletText("emit_live_assembly()");
-  ImGui::BulletText("symbol patching");
-  ImGui::BulletText("watchpoint reconciliation");
 }

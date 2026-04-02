@@ -19,6 +19,5 @@ namespace app
     void ensure_layout(ImGuiID dockspace_id);
 
     bool m_layout_initialized;
-    bool m_profiler_window_initialized;
   };
 }

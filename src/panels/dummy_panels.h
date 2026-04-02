@@ -8,9 +8,7 @@ namespace panels
   void draw_console_panel(ImFont* mono_font);
   void draw_editor_panel(ImFont* mono_font);
   void draw_explorer_panel();
-  void draw_inspector_panel();
   void draw_memory_panel();
   void draw_outline_panel();
-  void draw_profiler_panel();
   void draw_watch_panel(ImFont* mono_font);
 }

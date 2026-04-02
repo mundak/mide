@@ -34,31 +34,14 @@ namespace
     return std::ceil(ImGui::GetTextLineHeight() + style.WindowPadding.y * 2.0f + style.FramePadding.y);
   }
 
-  float get_top_bar_trailing_width()
-  {
-    return std::ceil(ImGui::GetFontSize() * 21.0f);
-  }
-
   float get_status_bar_trailing_width()
   {
     return std::ceil(ImGui::GetFontSize() * 22.0f);
-  }
-
-  void draw_chip(const char* label, const ImVec4& color)
-  {
-    ImGui::PushStyleColor(ImGuiCol_Button, color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
-    ImGui::Button(label);
-    ImGui::PopStyleVar(1);
-    ImGui::PopStyleColor(3);
   }
 }
 
 app::editor_shell::editor_shell()
   : m_layout_initialized(false)
-  , m_profiler_window_initialized(false)
 {
 }
 
@@ -124,19 +107,6 @@ void app::editor_shell::draw_top_bar()
       ImGui::EndMenu();
     }
 
-    float trailing_width = get_top_bar_trailing_width();
-    float cursor_x = ImGui::GetWindowContentRegionMax().x - trailing_width;
-    if (cursor_x > ImGui::GetCursorPosX())
-    {
-      ImGui::SetCursorPosX(cursor_x);
-    }
-
-    draw_chip("Debug", ImVec4(0.36f, 0.52f, 0.96f, 0.85f));
-    ImGui::SameLine();
-    draw_chip("x64", ImVec4(0.22f, 0.24f, 0.31f, 1.0f));
-    ImGui::SameLine();
-    draw_chip("Docking + Viewports", ImVec4(0.18f, 0.55f, 0.38f, 0.85f));
-
     ImGui::EndMenuBar();
   }
 
@@ -172,18 +142,6 @@ void app::editor_shell::draw_status_bar()
   ImGui::TextDisabled("main.c");
   ImGui::SameLine();
   ImGui::TextDisabled("Ln 42, Col 18");
-  ImGui::SameLine();
-  ImGui::TextDisabled("clang frontend: warm");
-
-  float right_edge = ImGui::GetWindowContentRegionMax().x - get_status_bar_trailing_width();
-  if (right_edge > ImGui::GetCursorPosX())
-  {
-    ImGui::SetCursorPosX(right_edge);
-  }
-
-  ImGui::TextDisabled("Tabs can be dragged into native windows");
-  ImGui::SameLine();
-  ImGui::Text("%.1f FPS | %.2f ms", ImGui::GetIO().Framerate, frame_time);
 
   ImGui::End();
 }
@@ -241,7 +199,6 @@ void app::editor_shell::ensure_layout(ImGuiID dockspace_id)
 
   ImGui::DockBuilderDockWindow("Editor", dock_center_id);
 
-  ImGui::DockBuilderDockWindow("Inspector", dock_right_id);
   ImGui::DockBuilderDockWindow("Watch", dock_right_id);
 
   ImGui::DockBuilderDockWindow("Assembly", dock_bottom_id);
@@ -268,10 +225,6 @@ void app::editor_shell::draw_panel_windows()
   panels::draw_editor_panel(mono_font);
   ImGui::End();
 
-  ImGui::Begin("Inspector");
-  panels::draw_inspector_panel();
-  ImGui::End();
-
   ImGui::Begin("Watch");
   panels::draw_watch_panel(mono_font);
   ImGui::End();
@@ -286,21 +239,5 @@ void app::editor_shell::draw_panel_windows()
 
   ImGui::Begin("Memory");
   panels::draw_memory_panel();
-  ImGui::End();
-
-  if (!m_profiler_window_initialized)
-  {
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    const float font_size = ImGui::GetFontSize();
-    const float frame_height = ImGui::GetFrameHeight();
-    ImGui::SetNextWindowPos(
-      ImVec2(viewport->Pos.x + viewport->Size.x - font_size * 22.5f, viewport->Pos.y + frame_height * 3.0f),
-      ImGuiCond_Once);
-    ImGui::SetNextWindowSize(ImVec2(font_size * 20.0f, frame_height * 8.0f), ImGuiCond_Once);
-    m_profiler_window_initialized = true;
-  }
-
-  ImGui::Begin("Profiler");
-  panels::draw_profiler_panel();
   ImGui::End();
 }
