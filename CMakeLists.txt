@@ -61,6 +61,11 @@ add_executable(mide
   src/app/application.cpp
   src/app/editor_shell.cpp
   src/app/theme.cpp
+  src/compiler/document/document_snapshot.cpp
+  src/compiler/document/line_index.cpp
+  src/compiler/document/text_change.cpp
+  src/compiler/syntax/syntax_support.cpp
+  src/compiler/syntax/syntax_tree.cpp
   src/panels/assembly_panel.cpp
   src/panels/console_panel.cpp
   src/panels/editor_panel.cpp

@@ -257,6 +257,10 @@ int32_t* ptr = nullptr;
 const std::string& name = get_name();
 ```
 
+Pass `std::shared_ptr<T>` and `std::shared_ptr<const T>` by `const&` rather than
+by value unless the function is intentionally taking shared ownership as part of
+its API contract.
+
 ---
 
 ## Static Functions
