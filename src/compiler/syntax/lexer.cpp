@@ -219,6 +219,11 @@ namespace
         ++offset;
         break;
 
+      case ',':
+        token_kind = compiler::syntax::SYNTAX_KIND_COMMA_TOKEN;
+        ++offset;
+        break;
+
       case ';':
         token_kind = compiler::syntax::SYNTAX_KIND_SEMICOLON_TOKEN;
         ++offset;
@@ -352,7 +357,7 @@ namespace
       return offset + static_cast<size_t>(positive_delta);
     }
 
-    const uint64_t negative_delta = static_cast<uint64_t>(-delta);
+    const uint64_t negative_delta = static_cast<uint64_t>(-(delta + 1)) + 1;
     if (negative_delta > offset)
     {
       throw std::out_of_range("shifted offset underflow");

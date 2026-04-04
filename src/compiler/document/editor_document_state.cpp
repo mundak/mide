@@ -1,6 +1,7 @@
 #include "editor_document_state.h"
 
 #include "compiler/document/text_change.h"
+#include "compiler/semantic/semantic_model.h"
 #include "compiler/syntax/syntax_kind.h"
 #include "compiler/syntax/syntax_node.h"
 #include "compiler/syntax/syntax_token.h"
@@ -193,39 +194,41 @@ namespace
     return false;
   }
 
-  editor_token_classification classify_identifier_token(const syntax_tree& tree, const syntax_token& token)
+  editor_token_classification classify_semantic_token(
+    const compiler::semantic::semantic_model& semantic_model, const syntax_token& token)
   {
-    std::optional<size_t> parent_index = token.parent_index;
-    while (parent_index.has_value())
+    switch (semantic_model.get_token_classification(token))
     {
-      const syntax_node& parent = tree.get_node(*parent_index);
+    case compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_NONE:
+      return compiler::document::EDITOR_TOKEN_CLASSIFICATION_DEFAULT;
 
-      if (parent.kind == compiler::syntax::SYNTAX_KIND_IDENTIFIER)
-      {
-        parent_index = parent.parent_index;
-        continue;
-      }
+    case compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_TYPE:
+      return compiler::document::EDITOR_TOKEN_CLASSIFICATION_TYPE;
 
-      if (parent.kind == compiler::syntax::SYNTAX_KIND_TYPE_SPECIFIER)
-      {
-        return compiler::document::EDITOR_TOKEN_CLASSIFICATION_TYPE;
-      }
+    case compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_FUNCTION:
+      return compiler::document::EDITOR_TOKEN_CLASSIFICATION_FUNCTION;
 
-      if (parent.kind == compiler::syntax::SYNTAX_KIND_FUNCTION_DECLARATOR)
-      {
-        return compiler::document::EDITOR_TOKEN_CLASSIFICATION_FUNCTION;
-      }
+    case compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_PARAMETER:
+      return compiler::document::EDITOR_TOKEN_CLASSIFICATION_PARAMETER;
 
-      break;
+    case compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_LOCAL:
+      return compiler::document::EDITOR_TOKEN_CLASSIFICATION_LOCAL;
+
+    case compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_FIELD:
+      return compiler::document::EDITOR_TOKEN_CLASSIFICATION_FIELD;
+
+    case compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_UNRESOLVED:
+      return compiler::document::EDITOR_TOKEN_CLASSIFICATION_UNRESOLVED;
     }
 
-    return compiler::document::EDITOR_TOKEN_CLASSIFICATION_DEFAULT;
+    throw std::invalid_argument("semantic token classification");
   }
 
   editor_token_classification classify_token(
     const syntax_tree& tree,
     const syntax_token& token,
-    const std::vector<compiler::syntax::syntax_diagnostic>& diagnostics)
+    const std::vector<compiler::syntax::syntax_diagnostic>& diagnostics,
+    const std::shared_ptr<const compiler::semantic::semantic_model>& semantic_model)
   {
     if (token.malformed || token_has_diagnostic(token, diagnostics) || token_is_in_recovered_region(tree, token))
     {
@@ -235,7 +238,16 @@ namespace
     switch (token.kind)
     {
     case compiler::syntax::SYNTAX_KIND_IDENTIFIER_TOKEN:
-      return classify_identifier_token(tree, token);
+      if (semantic_model != nullptr)
+      {
+        const editor_token_classification classification = classify_semantic_token(*semantic_model, token);
+        if (classification != compiler::document::EDITOR_TOKEN_CLASSIFICATION_DEFAULT)
+        {
+          return classification;
+        }
+      }
+
+      return compiler::document::EDITOR_TOKEN_CLASSIFICATION_DEFAULT;
 
     case compiler::syntax::SYNTAX_KIND_INTEGER_LITERAL_TOKEN:
       return compiler::document::EDITOR_TOKEN_CLASSIFICATION_LITERAL;
@@ -250,6 +262,7 @@ namespace
     case compiler::syntax::SYNTAX_KIND_CLOSE_PAREN_TOKEN:
     case compiler::syntax::SYNTAX_KIND_OPEN_BRACE_TOKEN:
     case compiler::syntax::SYNTAX_KIND_CLOSE_BRACE_TOKEN:
+    case compiler::syntax::SYNTAX_KIND_COMMA_TOKEN:
     case compiler::syntax::SYNTAX_KIND_SEMICOLON_TOKEN:
       return compiler::document::EDITOR_TOKEN_CLASSIFICATION_PUNCTUATION;
 
@@ -263,10 +276,13 @@ namespace
     case compiler::syntax::SYNTAX_KIND_FUNCTION_DEFINITION:
     case compiler::syntax::SYNTAX_KIND_FUNCTION_DECLARATOR:
     case compiler::syntax::SYNTAX_KIND_PARAMETER_LIST:
+    case compiler::syntax::SYNTAX_KIND_PARAMETER_DECLARATION:
     case compiler::syntax::SYNTAX_KIND_COMPOUND_STATEMENT:
+    case compiler::syntax::SYNTAX_KIND_DECLARATION_STATEMENT:
     case compiler::syntax::SYNTAX_KIND_RETURN_STATEMENT:
     case compiler::syntax::SYNTAX_KIND_IDENTIFIER:
     case compiler::syntax::SYNTAX_KIND_TYPE_SPECIFIER:
+    case compiler::syntax::SYNTAX_KIND_IDENTIFIER_EXPRESSION:
     case compiler::syntax::SYNTAX_KIND_LITERAL_EXPRESSION:
     case compiler::syntax::SYNTAX_KIND_MISSING:
     case compiler::syntax::SYNTAX_KIND_ERROR:
@@ -418,6 +434,7 @@ void compiler::document::editor_document_state::rebuild_derived_state()
   }
 
   const std::vector<compiler::syntax::syntax_diagnostic>& tree_diagnostics = tree->get_diagnostics();
+  const std::shared_ptr<const compiler::semantic::semantic_model> semantic_model = m_snapshot.get_semantic_model();
   for (const compiler::syntax::syntax_diagnostic& diagnostic : tree_diagnostics)
   {
     const size_t start_offset = clamp_offset(diagnostic.span.start, m_snapshot.get_text_size());
@@ -464,7 +481,7 @@ void compiler::document::editor_document_state::rebuild_derived_state()
 
     m_highlight_spans.push_back(editor_highlight_span {
       token.span,
-      classify_token(*tree, token, tree_diagnostics),
+      classify_token(*tree, token, tree_diagnostics, semantic_model),
     });
   }
 

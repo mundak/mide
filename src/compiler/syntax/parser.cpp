@@ -80,6 +80,9 @@ namespace
     case compiler::syntax::SYNTAX_KIND_CLOSE_BRACE_TOKEN:
       return "'}'";
 
+    case compiler::syntax::SYNTAX_KIND_COMMA_TOKEN:
+      return "','";
+
     case compiler::syntax::SYNTAX_KIND_SEMICOLON_TOKEN:
       return "';'";
 
@@ -90,10 +93,13 @@ namespace
     case compiler::syntax::SYNTAX_KIND_FUNCTION_DEFINITION:
     case compiler::syntax::SYNTAX_KIND_FUNCTION_DECLARATOR:
     case compiler::syntax::SYNTAX_KIND_PARAMETER_LIST:
+    case compiler::syntax::SYNTAX_KIND_PARAMETER_DECLARATION:
     case compiler::syntax::SYNTAX_KIND_COMPOUND_STATEMENT:
+    case compiler::syntax::SYNTAX_KIND_DECLARATION_STATEMENT:
     case compiler::syntax::SYNTAX_KIND_RETURN_STATEMENT:
     case compiler::syntax::SYNTAX_KIND_IDENTIFIER:
     case compiler::syntax::SYNTAX_KIND_TYPE_SPECIFIER:
+    case compiler::syntax::SYNTAX_KIND_IDENTIFIER_EXPRESSION:
     case compiler::syntax::SYNTAX_KIND_LITERAL_EXPRESSION:
     case compiler::syntax::SYNTAX_KIND_MISSING:
     case compiler::syntax::SYNTAX_KIND_ERROR:
@@ -318,6 +324,53 @@ namespace
       return node_index;
     }
 
+    size_t parse_identifier_expression(size_t parent_index)
+    {
+      const size_t node_index = create_node(
+        compiler::syntax::SYNTAX_KIND_IDENTIFIER_EXPRESSION, parent_index, compiler::syntax::SYNTAX_NODE_FLAG_NONE);
+
+      std::vector<syntax_child_reference> children;
+      children.push_back(node_child(parse_identifier(node_index)));
+      finalize_node(node_index, m_nodes[children.front().index].span, std::move(children));
+      return node_index;
+    }
+
+    size_t parse_expression(size_t parent_index)
+    {
+      if (get_current_kind() == compiler::syntax::SYNTAX_KIND_INTEGER_LITERAL_TOKEN)
+      {
+        return parse_literal_expression(parent_index);
+      }
+
+      if (get_current_kind() == compiler::syntax::SYNTAX_KIND_IDENTIFIER_TOKEN)
+      {
+        return parse_identifier_expression(parent_index);
+      }
+
+      add_diagnostic(
+        compiler::syntax::SYNTAX_DIAGNOSTIC_CODE_EXPECTED_EXPRESSION, get_fallback_span(), "expected expression");
+
+      const size_t node_index
+        = create_node(compiler::syntax::SYNTAX_KIND_MISSING, parent_index, compiler::syntax::SYNTAX_NODE_FLAG_MISSING);
+      finalize_node(node_index, get_fallback_span(), std::vector<syntax_child_reference> {});
+      return node_index;
+    }
+
+    size_t parse_parameter_declaration(size_t parent_index)
+    {
+      const size_t node_index = create_node(
+        compiler::syntax::SYNTAX_KIND_PARAMETER_DECLARATION, parent_index, compiler::syntax::SYNTAX_NODE_FLAG_NONE);
+
+      std::vector<syntax_child_reference> children;
+      children.push_back(node_child(parse_type_specifier(node_index)));
+      children.push_back(node_child(parse_identifier(node_index)));
+
+      const size_t start = m_nodes[children.front().index].span.start;
+      const size_t end = m_nodes[children.back().index].span.get_end();
+      finalize_node(node_index, span_from_bounds(start, end), std::move(children));
+      return node_index;
+    }
+
     size_t parse_parameter_list(size_t parent_index)
     {
       const size_t node_index = create_node(
@@ -338,9 +391,36 @@ namespace
         children.push_back(node_child(create_missing_node(node_index, "'('")));
       }
 
+      bool expect_parameter = (get_current_kind() != compiler::syntax::SYNTAX_KIND_CLOSE_PAREN_TOKEN)
+        && (get_current_kind() != compiler::syntax::SYNTAX_KIND_END_OF_FILE_TOKEN);
+
       while ((get_current_kind() != compiler::syntax::SYNTAX_KIND_CLOSE_PAREN_TOKEN)
              && (get_current_kind() != compiler::syntax::SYNTAX_KIND_END_OF_FILE_TOKEN))
       {
+        if (expect_parameter)
+        {
+          if (get_current_kind() == compiler::syntax::SYNTAX_KIND_INT_KEYWORD)
+          {
+            children.push_back(node_child(parse_parameter_declaration(node_index)));
+          }
+          else
+          {
+            children.push_back(node_child(parse_unexpected_token(node_index, "expected parameter declaration")));
+          }
+
+          span_end = m_nodes[children.back().index].span.get_end();
+          expect_parameter = false;
+          continue;
+        }
+
+        if (get_current_kind() == compiler::syntax::SYNTAX_KIND_COMMA_TOKEN)
+        {
+          span_end = get_current_token().span.get_end();
+          children.push_back(attach_current_token(node_index));
+          expect_parameter = true;
+          continue;
+        }
+
         children.push_back(node_child(parse_unexpected_token(node_index, "unexpected token in parameter list")));
         span_end = m_nodes[children.back().index].span.get_end();
       }
@@ -361,6 +441,31 @@ namespace
       }
 
       finalize_node(node_index, span_from_bounds(span_start, span_end), std::move(children));
+      return node_index;
+    }
+
+    size_t parse_declaration_statement(size_t parent_index)
+    {
+      const size_t node_index = create_node(
+        compiler::syntax::SYNTAX_KIND_DECLARATION_STATEMENT, parent_index, compiler::syntax::SYNTAX_NODE_FLAG_NONE);
+
+      std::vector<syntax_child_reference> children;
+      children.push_back(node_child(parse_type_specifier(node_index)));
+      children.push_back(node_child(parse_identifier(node_index)));
+
+      size_t span_end = m_nodes[children.back().index].span.get_end();
+      if (get_current_kind() == compiler::syntax::SYNTAX_KIND_SEMICOLON_TOKEN)
+      {
+        span_end = get_current_token().span.get_end();
+        children.push_back(attach_current_token(node_index));
+      }
+      else
+      {
+        children.push_back(node_child(create_missing_node(node_index, "';'")));
+      }
+
+      const size_t start = m_nodes[children.front().index].span.start;
+      finalize_node(node_index, span_from_bounds(start, span_end), std::move(children));
       return node_index;
     }
 
@@ -399,7 +504,7 @@ namespace
         children.push_back(node_child(create_missing_node(node_index, "'return'")));
       }
 
-      children.push_back(node_child(parse_literal_expression(node_index)));
+      children.push_back(node_child(parse_expression(node_index)));
       if (m_nodes[children.back().index].span.get_end() > span_end)
       {
         span_end = m_nodes[children.back().index].span.get_end();
@@ -445,6 +550,10 @@ namespace
         if (get_current_kind() == compiler::syntax::SYNTAX_KIND_RETURN_KEYWORD)
         {
           children.push_back(node_child(parse_return_statement(node_index)));
+        }
+        else if (get_current_kind() == compiler::syntax::SYNTAX_KIND_INT_KEYWORD)
+        {
+          children.push_back(node_child(parse_declaration_statement(node_index)));
         }
         else
         {

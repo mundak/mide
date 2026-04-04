@@ -1,5 +1,6 @@
 #include "document_snapshot.h"
 
+#include "compiler/semantic/semantic_model.h"
 #include "compiler/syntax/lexer.h"
 #include "compiler/syntax/parser.h"
 #include "compiler/syntax/syntax_tree.h"
@@ -37,6 +38,7 @@ compiler::document::document_snapshot::document_snapshot(uint64_t generation, st
   , m_text(std::move(text))
   , m_line_index(m_text)
   , m_syntax_tree(parse_text(generation, m_text))
+  , m_semantic_model(compiler::semantic::semantic_model::analyze(*m_syntax_tree, m_text))
 {
 }
 
@@ -46,6 +48,7 @@ compiler::document::document_snapshot::document_snapshot(
   , m_text(std::move(text))
   , m_line_index(m_text)
   , m_syntax_tree(ensure_tree(generation, syntax_tree))
+  , m_semantic_model(compiler::semantic::semantic_model::analyze(*m_syntax_tree, m_text))
 {
 }
 
@@ -80,6 +83,12 @@ uint64_t compiler::document::document_snapshot::get_generation() const
 const compiler::document::line_index& compiler::document::document_snapshot::get_line_index() const
 {
   return m_line_index;
+}
+
+std::shared_ptr<const compiler::semantic::semantic_model> compiler::document::document_snapshot::get_semantic_model()
+  const
+{
+  return m_semantic_model;
 }
 
 std::shared_ptr<const compiler::syntax::syntax_tree> compiler::document::document_snapshot::get_syntax_tree() const

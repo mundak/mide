@@ -58,6 +58,18 @@ namespace
     case compiler::document::EDITOR_TOKEN_CLASSIFICATION_FUNCTION:
       return ImVec4(0.98f, 0.84f, 0.56f, 1.00f);
 
+    case compiler::document::EDITOR_TOKEN_CLASSIFICATION_PARAMETER:
+      return ImVec4(0.57f, 0.88f, 0.70f, 1.00f);
+
+    case compiler::document::EDITOR_TOKEN_CLASSIFICATION_LOCAL:
+      return ImVec4(0.83f, 0.90f, 0.68f, 1.00f);
+
+    case compiler::document::EDITOR_TOKEN_CLASSIFICATION_FIELD:
+      return ImVec4(0.69f, 0.82f, 0.91f, 1.00f);
+
+    case compiler::document::EDITOR_TOKEN_CLASSIFICATION_UNRESOLVED:
+      return ImVec4(0.95f, 0.60f, 0.37f, 1.00f);
+
     case compiler::document::EDITOR_TOKEN_CLASSIFICATION_LITERAL:
       return ImVec4(0.93f, 0.72f, 0.45f, 1.00f);
 
@@ -71,7 +83,7 @@ namespace
     return ImVec4(0.90f, 0.90f, 0.95f, 1.00f);
   }
 
-  int32_t input_text_callback(ImGuiInputTextCallbackData* data)
+  int input_text_callback(ImGuiInputTextCallbackData* data)
   {
     input_text_user_data* user_data = static_cast<input_text_user_data*>(data->UserData);
     if (user_data == nullptr)

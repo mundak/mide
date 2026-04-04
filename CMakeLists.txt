@@ -61,6 +61,7 @@ add_library(mide_frontend STATIC
   src/compiler/document/document_snapshot.cpp
   src/compiler/document/line_index.cpp
   src/compiler/document/text_change.cpp
+  src/compiler/semantic/semantic_model.cpp
   src/compiler/syntax/lexer.cpp
   src/compiler/syntax/parser.cpp
   src/compiler/syntax/syntax_support.cpp

@@ -1,6 +1,7 @@
 #include "compiler/document/document_snapshot.h"
 #include "compiler/document/editor_document_state.h"
 #include "compiler/document/text_change.h"
+#include "compiler/semantic/semantic_model.h"
 #include "compiler/syntax/syntax_kind.h"
 #include "compiler/syntax/syntax_tree.h"
 
@@ -8,6 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -52,6 +54,27 @@ namespace
     }
 
     throw std::runtime_error("token kind not found");
+  }
+
+  std::vector<size_t> find_identifier_token_indices_by_text(
+    const compiler::syntax::syntax_tree& tree, const std::string& source_text, const std::string& identifier_text)
+  {
+    std::vector<size_t> matches;
+    for (size_t token_index = 0; token_index < tree.get_token_count(); ++token_index)
+    {
+      const compiler::syntax::syntax_token& token = tree.get_token(token_index);
+      if (token.kind != compiler::syntax::SYNTAX_KIND_IDENTIFIER_TOKEN)
+      {
+        continue;
+      }
+
+      if (source_text.substr(token.span.start, token.span.length) == identifier_text)
+      {
+        matches.push_back(token_index);
+      }
+    }
+
+    return matches;
   }
 
   void verify_bootstrap_parse()
@@ -194,6 +217,80 @@ namespace
     require(document_state.get_generation() == 2, "expected generation increment after edit");
     require(document_state.has_diagnostic_at_line(1), "expected diagnostic line marker on edited line");
   }
+
+  void verify_semantic_model_classifies_functions_parameters_locals_and_unresolved_symbols()
+  {
+    const std::string source_text
+      = "int echo(int value) { int local; return value; }\nint main() { return missing; }\n";
+    const compiler::document::document_snapshot snapshot
+      = compiler::document::document_snapshot::create_initial(source_text);
+    const std::shared_ptr<const compiler::syntax::syntax_tree> tree = snapshot.get_syntax_tree();
+    const std::shared_ptr<const compiler::semantic::semantic_model> semantic_model = snapshot.get_semantic_model();
+
+    require(tree != nullptr, "syntax tree missing for semantic classification test");
+    require(semantic_model != nullptr, "semantic model missing from snapshot");
+    require(semantic_model->get_scopes().size() >= 4, "expected nested semantic scopes");
+    require(semantic_model->get_symbols().size() >= 3, "expected function, parameter, and local symbols");
+
+    const std::vector<size_t> echo_tokens = find_identifier_token_indices_by_text(*tree, source_text, "echo");
+    require(echo_tokens.size() == 1, "expected one echo token");
+    require(
+      semantic_model->get_token_classification(tree->get_token(echo_tokens[0]))
+        == compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_FUNCTION,
+      "expected function classification for echo");
+
+    const std::vector<size_t> value_tokens = find_identifier_token_indices_by_text(*tree, source_text, "value");
+    require(value_tokens.size() == 2, "expected parameter declaration and reference tokens for value");
+    require(
+      semantic_model->get_token_classification(tree->get_token(value_tokens[0]))
+        == compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_PARAMETER,
+      "expected parameter classification for declaration");
+    require(
+      semantic_model->get_token_classification(tree->get_token(value_tokens[1]))
+        == compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_PARAMETER,
+      "expected parameter classification for reference");
+
+    const std::vector<size_t> local_tokens = find_identifier_token_indices_by_text(*tree, source_text, "local");
+    require(local_tokens.size() == 1, "expected one local token");
+    require(
+      semantic_model->get_token_classification(tree->get_token(local_tokens[0]))
+        == compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_LOCAL,
+      "expected local classification");
+
+    const std::vector<size_t> missing_tokens = find_identifier_token_indices_by_text(*tree, source_text, "missing");
+    require(missing_tokens.size() == 1, "expected one unresolved identifier token");
+    require(
+      semantic_model->get_token_classification(tree->get_token(missing_tokens[0]))
+        == compiler::semantic::SEMANTIC_TOKEN_CLASSIFICATION_UNRESOLVED,
+      "expected unresolved symbol classification");
+
+    compiler::document::editor_document_state document_state
+      = compiler::document::editor_document_state::create_initial(source_text);
+    bool found_parameter_highlight = false;
+    bool found_local_highlight = false;
+    bool found_unresolved_highlight = false;
+    for (const compiler::document::editor_highlight_span& highlight : document_state.get_highlight_spans())
+    {
+      if (highlight.classification == compiler::document::EDITOR_TOKEN_CLASSIFICATION_PARAMETER)
+      {
+        found_parameter_highlight = true;
+      }
+
+      if (highlight.classification == compiler::document::EDITOR_TOKEN_CLASSIFICATION_LOCAL)
+      {
+        found_local_highlight = true;
+      }
+
+      if (highlight.classification == compiler::document::EDITOR_TOKEN_CLASSIFICATION_UNRESOLVED)
+      {
+        found_unresolved_highlight = true;
+      }
+    }
+
+    require(found_parameter_highlight, "expected parameter highlighting");
+    require(found_local_highlight, "expected local highlighting");
+    require(found_unresolved_highlight, "expected unresolved highlighting");
+  }
 }
 
 int main()
@@ -206,6 +303,7 @@ int main()
     verify_error_recovery();
     verify_editor_document_state_exposes_live_outline_and_highlighting();
     verify_editor_document_state_updates_incrementally_from_text();
+    verify_semantic_model_classifies_functions_parameters_locals_and_unresolved_symbols();
     return 0;
   }
   catch (const std::exception& exception)

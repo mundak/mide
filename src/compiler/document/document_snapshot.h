@@ -10,6 +10,11 @@
 
 namespace compiler
 {
+  namespace semantic
+  {
+    class semantic_model;
+  }
+
   namespace syntax
   {
     class syntax_tree;
@@ -32,6 +37,7 @@ namespace compiler
 
       [[nodiscard]] uint64_t get_generation() const;
       [[nodiscard]] const line_index& get_line_index() const;
+      [[nodiscard]] std::shared_ptr<const semantic::semantic_model> get_semantic_model() const;
       [[nodiscard]] std::shared_ptr<const syntax::syntax_tree> get_syntax_tree() const;
       [[nodiscard]] const std::string& get_text() const;
       [[nodiscard]] size_t get_text_size() const;
@@ -43,6 +49,7 @@ namespace compiler
       std::string m_text;
       class line_index m_line_index;
       std::shared_ptr<const syntax::syntax_tree> m_syntax_tree;
+      std::shared_ptr<const semantic::semantic_model> m_semantic_model;
     };
   }
 }
