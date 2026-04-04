@@ -1,6 +1,7 @@
 #include "document_snapshot.h"
 
 #include "compiler/syntax/lexer.h"
+#include "compiler/syntax/parser.h"
 #include "compiler/syntax/syntax_tree.h"
 
 #include <stdexcept>
@@ -8,6 +9,12 @@
 
 namespace
 {
+  std::shared_ptr<const compiler::syntax::syntax_tree> parse_text(uint64_t generation, const std::string& text)
+  {
+    std::shared_ptr<const compiler::syntax::syntax_tree> lexed_tree = compiler::syntax::lexer::lex(generation, text);
+    return compiler::syntax::parser::parse(*lexed_tree, text.size());
+  }
+
   std::shared_ptr<const compiler::syntax::syntax_tree> ensure_tree(
     uint64_t generation, const std::shared_ptr<const compiler::syntax::syntax_tree>& syntax_tree)
   {
@@ -26,7 +33,10 @@ namespace
 }
 
 compiler::document::document_snapshot::document_snapshot(uint64_t generation, std::string text)
-  : document_snapshot(generation, std::move(text), compiler::syntax::syntax_tree::create_empty(generation))
+  : m_generation(generation)
+  , m_text(std::move(text))
+  , m_line_index(m_text)
+  , m_syntax_tree(parse_text(generation, m_text))
 {
 }
 
@@ -41,8 +51,7 @@ compiler::document::document_snapshot::document_snapshot(
 
 compiler::document::document_snapshot compiler::document::document_snapshot::create_initial(std::string text)
 {
-  std::shared_ptr<const compiler::syntax::syntax_tree> syntax_tree = compiler::syntax::lexer::lex(1, text);
-  return document_snapshot(1, std::move(text), syntax_tree);
+  return document_snapshot(1, std::move(text));
 }
 
 compiler::document::document_snapshot compiler::document::document_snapshot::apply_change(
@@ -50,8 +59,10 @@ compiler::document::document_snapshot compiler::document::document_snapshot::app
 {
   const uint64_t next_generation = m_generation + 1;
   std::string updated_text = apply_change_to_text(m_text, change);
-  std::shared_ptr<const compiler::syntax::syntax_tree> syntax_tree
+  std::shared_ptr<const compiler::syntax::syntax_tree> lexed_tree
     = compiler::syntax::lexer::relex(next_generation, m_text, *m_syntax_tree, change, updated_text);
+  std::shared_ptr<const compiler::syntax::syntax_tree> syntax_tree
+    = compiler::syntax::parser::parse(*lexed_tree, updated_text.size());
   return document_snapshot(next_generation, std::move(updated_text), syntax_tree);
 }
 

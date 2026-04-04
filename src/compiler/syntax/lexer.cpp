@@ -113,7 +113,7 @@ namespace
           if (offset >= text.size())
           {
             diagnostics.push_back(syntax_diagnostic {
-              compiler::syntax::SYNTAX_DIAGNOSTIC_UNTERMINATED_BLOCK_COMMENT,
+              compiler::syntax::SYNTAX_DIAGNOSTIC_CODE_UNTERMINATED_BLOCK_COMMENT,
               source_span::from_bounds(comment_start, text.size()),
               "unterminated block comment",
             });
@@ -185,7 +185,7 @@ namespace
         }
 
         diagnostics.push_back(syntax_diagnostic {
-          compiler::syntax::SYNTAX_DIAGNOSTIC_INVALID_INTEGER_LITERAL,
+          compiler::syntax::SYNTAX_DIAGNOSTIC_CODE_INVALID_INTEGER_LITERAL,
           source_span::from_bounds(token_start, offset),
           "invalid integer literal",
         });
@@ -228,7 +228,7 @@ namespace
         malformed = true;
         ++offset;
         diagnostics.push_back(syntax_diagnostic {
-          compiler::syntax::SYNTAX_DIAGNOSTIC_INVALID_TOKEN,
+          compiler::syntax::SYNTAX_DIAGNOSTIC_CODE_INVALID_TOKEN,
           source_span::from_bounds(token_start, offset),
           "invalid token",
         });
@@ -481,7 +481,17 @@ std::shared_ptr<const syntax_tree> compiler::syntax::lexer::relex(
       tokens.push_back(clone_token_for_flat_tree(token));
     }
 
-    return build_flat_tree(source_generation, new_text.size(), std::move(tokens), old_diagnostics, next_id);
+    std::vector<syntax_diagnostic> diagnostics;
+    diagnostics.reserve(old_diagnostics.size());
+    for (const syntax_diagnostic& diagnostic : old_diagnostics)
+    {
+      if (compiler::syntax::is_lexical_diagnostic_code(diagnostic.code))
+      {
+        diagnostics.push_back(diagnostic);
+      }
+    }
+
+    return build_flat_tree(source_generation, new_text.size(), std::move(tokens), std::move(diagnostics), next_id);
   }
 
   const size_t probe_offset = (change.start_offset == 0) ? 0 : (change.start_offset - static_cast<size_t>(1));
@@ -499,7 +509,7 @@ std::shared_ptr<const syntax_tree> compiler::syntax::lexer::relex(
   diagnostics.reserve(old_diagnostics.size() + 4);
   for (const syntax_diagnostic& diagnostic : old_diagnostics)
   {
-    if (diagnostic.span.get_end() <= old_relex_start)
+    if (compiler::syntax::is_lexical_diagnostic_code(diagnostic.code) && (diagnostic.span.get_end() <= old_relex_start))
     {
       diagnostics.push_back(diagnostic);
     }
@@ -557,7 +567,7 @@ std::shared_ptr<const syntax_tree> compiler::syntax::lexer::relex(
 
     for (const syntax_diagnostic& diagnostic : old_diagnostics)
     {
-      if (diagnostic.span.start >= old_resume_offset)
+      if (compiler::syntax::is_lexical_diagnostic_code(diagnostic.code) && (diagnostic.span.start >= old_resume_offset))
       {
         diagnostics.push_back(shift_diagnostic(diagnostic, delta));
       }

@@ -56,17 +56,30 @@ target_link_libraries(imgui
   PUBLIC
     glfw)
 
+add_library(mide_frontend STATIC
+  src/compiler/document/document_snapshot.cpp
+  src/compiler/document/line_index.cpp
+  src/compiler/document/text_change.cpp
+  src/compiler/syntax/lexer.cpp
+  src/compiler/syntax/parser.cpp
+  src/compiler/syntax/syntax_support.cpp
+  src/compiler/syntax/syntax_tree.cpp)
+
+target_include_directories(mide_frontend
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+if(MSVC)
+  target_compile_options(mide_frontend PRIVATE /W4 /permissive- /EHsc)
+else()
+  target_compile_options(mide_frontend PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
 add_executable(mide
   src/main.cpp
   src/app/application.cpp
   src/app/editor_shell.cpp
   src/app/theme.cpp
-  src/compiler/document/document_snapshot.cpp
-  src/compiler/document/line_index.cpp
-  src/compiler/document/text_change.cpp
-  src/compiler/syntax/lexer.cpp
-  src/compiler/syntax/syntax_support.cpp
-  src/compiler/syntax/syntax_tree.cpp
   src/panels/assembly_panel.cpp
   src/panels/console_panel.cpp
   src/panels/editor_panel.cpp
@@ -86,11 +99,21 @@ target_compile_definitions(mide
 
 target_link_libraries(mide
   PRIVATE
+    mide_frontend
     imgui
     opengl32)
 
+add_executable(frontend_smoke
+  tests/frontend_smoke.cpp)
+
+target_link_libraries(frontend_smoke
+  PRIVATE
+    mide_frontend)
+
 if(MSVC)
   target_compile_options(mide PRIVATE /W4 /permissive- /EHsc)
+  target_compile_options(frontend_smoke PRIVATE /W4 /permissive- /EHsc)
 else()
   target_compile_options(mide PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(frontend_smoke PRIVATE -Wall -Wextra -Wpedantic)
 endif()

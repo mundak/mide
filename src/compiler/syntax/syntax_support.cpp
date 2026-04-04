@@ -1,4 +1,5 @@
 #include "source_span.h"
+#include "syntax_diagnostic.h"
 #include "syntax_identity.h"
 #include "syntax_kind.h"
 #include "syntax_node.h"
@@ -88,4 +89,23 @@ compiler::syntax::syntax_node_flags compiler::syntax::operator|(syntax_node_flag
 bool compiler::syntax::has_flag(syntax_node_flags flags, syntax_node_flags flag)
 {
   return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(flag)) != 0;
+}
+
+bool compiler::syntax::is_lexical_diagnostic_code(syntax_diagnostic_code code)
+{
+  switch (code)
+  {
+  case SYNTAX_DIAGNOSTIC_CODE_INVALID_TOKEN:
+  case SYNTAX_DIAGNOSTIC_CODE_INVALID_INTEGER_LITERAL:
+  case SYNTAX_DIAGNOSTIC_CODE_UNTERMINATED_BLOCK_COMMENT:
+    return true;
+
+  case SYNTAX_DIAGNOSTIC_CODE_UNEXPECTED_TOKEN:
+  case SYNTAX_DIAGNOSTIC_CODE_EXPECTED_TOKEN:
+  case SYNTAX_DIAGNOSTIC_CODE_EXPECTED_DECLARATION:
+  case SYNTAX_DIAGNOSTIC_CODE_EXPECTED_EXPRESSION:
+    return false;
+  }
+
+  throw std::invalid_argument("syntax_diagnostic_code");
 }
