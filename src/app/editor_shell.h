@@ -1,6 +1,10 @@
 #pragma once
 
+// clang-format off
+#include "compiler/document/editor_document_state.h"
+
 #include "imgui.h"
+// clang-format on
 
 namespace app
 {
@@ -18,6 +22,7 @@ namespace app
     void draw_top_bar();
     void ensure_layout(ImGuiID dockspace_id);
 
+    compiler::document::editor_document_state m_document_state;
     bool m_layout_initialized;
   };
 }

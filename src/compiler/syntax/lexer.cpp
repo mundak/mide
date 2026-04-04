@@ -560,7 +560,12 @@ std::shared_ptr<const syntax_tree> compiler::syntax::lexer::relex(
   if (sync_index != NPOS)
   {
     const size_t old_resume_offset = get_owned_start(old_tokens[sync_index]);
-    for (size_t token_index = sync_index; token_index < old_tokens.size(); ++token_index)
+    const bool skip_synced_eof = !tokens.empty()
+      && (tokens.back().kind == compiler::syntax::SYNTAX_KIND_END_OF_FILE_TOKEN)
+      && (old_tokens[sync_index].kind == compiler::syntax::SYNTAX_KIND_END_OF_FILE_TOKEN);
+    const size_t resume_index = skip_synced_eof ? (sync_index + static_cast<size_t>(1)) : sync_index;
+
+    for (size_t token_index = resume_index; token_index < old_tokens.size(); ++token_index)
     {
       tokens.push_back(shift_token_for_flat_tree(old_tokens[token_index], delta));
     }

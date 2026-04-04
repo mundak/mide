@@ -1,4 +1,5 @@
 #include "compiler/document/document_snapshot.h"
+#include "compiler/document/editor_document_state.h"
 #include "compiler/document/text_change.h"
 #include "compiler/syntax/syntax_kind.h"
 #include "compiler/syntax/syntax_tree.h"
@@ -124,6 +125,29 @@ namespace
       "literal token id did not change");
   }
 
+  void verify_incremental_relex_handles_suffix_sync_at_eof()
+  {
+    const std::string source_text = "int main() { return 1; }\n";
+    const compiler::document::document_snapshot initial_snapshot
+      = compiler::document::document_snapshot::create_initial(source_text);
+
+    const compiler::document::text_change change {
+      source_text.size(),
+      source_text.size(),
+      "a",
+    };
+
+    const compiler::document::document_snapshot updated_snapshot = initial_snapshot.apply_change(change);
+    const std::shared_ptr<const compiler::syntax::syntax_tree> updated_tree = updated_snapshot.get_syntax_tree();
+
+    require(updated_tree != nullptr, "updated syntax tree missing for eof suffix sync");
+    require(updated_tree->get_token_count() > 0, "expected tokens after eof suffix sync");
+    require(
+      updated_tree->get_token(updated_tree->get_token_count() - 1).kind
+        == compiler::syntax::SYNTAX_KIND_END_OF_FILE_TOKEN,
+      "expected eof token at end of updated token stream");
+  }
+
   void verify_error_recovery()
   {
     const compiler::document::document_snapshot snapshot
@@ -134,6 +158,42 @@ namespace
     require(!tree->get_diagnostics().empty(), "expected diagnostics for broken input");
     require(tree_contains_kind(*tree, compiler::syntax::SYNTAX_KIND_MISSING), "expected missing syntax node");
   }
+
+  void verify_editor_document_state_exposes_live_outline_and_highlighting()
+  {
+    compiler::document::editor_document_state document_state
+      = compiler::document::editor_document_state::create_initial("int main() { return 1; }");
+
+    require(!document_state.has_diagnostics(), "bootstrap editor state should not have diagnostics");
+    require(document_state.get_generation() == 1, "bootstrap editor state should start at generation 1");
+    require(document_state.get_outline_items().size() == 1, "expected one outline item");
+    require(document_state.get_outline_items()[0].label == "function main", "unexpected outline label");
+    require(document_state.get_outline_items()[0].line_number == 1, "unexpected outline line number");
+
+    bool found_function_highlight = false;
+    for (const compiler::document::editor_highlight_span& highlight : document_state.get_highlight_spans())
+    {
+      if (highlight.classification == compiler::document::EDITOR_TOKEN_CLASSIFICATION_FUNCTION)
+      {
+        found_function_highlight = true;
+        break;
+      }
+    }
+
+    require(found_function_highlight, "expected function-name classification in highlight spans");
+  }
+
+  void verify_editor_document_state_updates_incrementally_from_text()
+  {
+    compiler::document::editor_document_state document_state
+      = compiler::document::editor_document_state::create_initial("int main() { return 1; }");
+
+    document_state.replace_text("int main() { return ; }");
+
+    require(document_state.has_diagnostics(), "expected diagnostics after removing literal");
+    require(document_state.get_generation() == 2, "expected generation increment after edit");
+    require(document_state.has_diagnostic_at_line(1), "expected diagnostic line marker on edited line");
+  }
 }
 
 int main()
@@ -142,7 +202,10 @@ int main()
   {
     verify_bootstrap_parse();
     verify_incremental_relex_preserves_unaffected_tokens();
+    verify_incremental_relex_handles_suffix_sync_at_eof();
     verify_error_recovery();
+    verify_editor_document_state_exposes_live_outline_and_highlighting();
+    verify_editor_document_state_updates_incrementally_from_text();
     return 0;
   }
   catch (const std::exception& exception)

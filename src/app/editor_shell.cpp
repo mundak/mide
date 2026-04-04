@@ -1,9 +1,13 @@
 #include "editor_shell.h"
 
-#include "imgui_internal.h"
+// clang-format off
 #include "panels/panels.h"
 #include "theme.h"
 
+#include "imgui_internal.h"
+// clang-format on
+
+#include <cinttypes>
 #include <cmath>
 
 namespace
@@ -134,11 +138,18 @@ void app::editor_shell::draw_status_bar()
     frame_time = 0.0f;
   }
 
-  ImGui::TextColored(ImVec4(0.51f, 0.76f, 1.0f, 1.0f), "READY");
+  const bool has_diagnostics = m_document_state.has_diagnostics();
+  const ImVec4 state_color = has_diagnostics ? ImVec4(0.90f, 0.66f, 0.35f, 1.0f) : ImVec4(0.45f, 0.82f, 0.53f, 1.0f);
+
+  ImGui::TextColored(state_color, has_diagnostics ? "DIAGNOSTICS" : "PARSED");
   ImGui::SameLine();
   ImGui::TextDisabled("main.c");
   ImGui::SameLine();
-  ImGui::TextDisabled("Ln 42, Col 18");
+  ImGui::TextDisabled("Ln %zu, Col %zu", m_document_state.get_cursor_line(), m_document_state.get_cursor_column());
+  ImGui::SameLine();
+  ImGui::TextDisabled("gen %" PRIu64, m_document_state.get_generation());
+  ImGui::SameLine();
+  ImGui::TextDisabled("%zu diagnostics", m_document_state.get_diagnostic_count());
   ImGui::SameLine(viewport->Size.x - get_status_bar_trailing_width());
   ImGui::TextDisabled("%.1f ms  %.0f FPS", frame_time, ImGui::GetIO().Framerate);
 
@@ -217,11 +228,11 @@ void app::editor_shell::draw_panel_windows()
   ImGui::End();
 
   ImGui::Begin("Outline");
-  panels::draw_outline_panel();
+  panels::draw_outline_panel(m_document_state);
   ImGui::End();
 
   ImGui::Begin("Editor");
-  panels::draw_editor_panel(mono_font);
+  panels::draw_editor_panel(m_document_state, mono_font);
   ImGui::End();
 
   ImGui::Begin("Watch");

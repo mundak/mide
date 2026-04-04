@@ -57,6 +57,7 @@ target_link_libraries(imgui
     glfw)
 
 add_library(mide_frontend STATIC
+  src/compiler/document/editor_document_state.cpp
   src/compiler/document/document_snapshot.cpp
   src/compiler/document/line_index.cpp
   src/compiler/document/text_change.cpp
