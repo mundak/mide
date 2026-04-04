@@ -97,11 +97,13 @@ compiler::syntax::syntax_tree::syntax_tree(
   uint64_t source_generation,
   std::vector<syntax_node> nodes,
   std::vector<syntax_token> tokens,
-  std::optional<size_t> root_node_index)
+  std::optional<size_t> root_node_index,
+  std::vector<syntax_diagnostic> diagnostics)
   : m_source_generation(source_generation)
   , m_nodes(std::move(nodes))
   , m_tokens(std::move(tokens))
   , m_root_node_index(root_node_index)
+  , m_diagnostics(std::move(diagnostics))
 {
   if (m_root_node_index.has_value() && (*m_root_node_index >= m_nodes.size()))
   {
@@ -288,6 +290,11 @@ size_t compiler::syntax::syntax_tree::get_token_count() const
 const std::vector<compiler::syntax::syntax_token>& compiler::syntax::syntax_tree::get_tokens() const
 {
   return m_tokens;
+}
+
+const std::vector<compiler::syntax::syntax_diagnostic>& compiler::syntax::syntax_tree::get_diagnostics() const
+{
+  return m_diagnostics;
 }
 
 bool compiler::syntax::syntax_tree::has_root() const

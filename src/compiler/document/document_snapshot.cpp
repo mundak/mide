@@ -1,5 +1,6 @@
 #include "document_snapshot.h"
 
+#include "compiler/syntax/lexer.h"
 #include "compiler/syntax/syntax_tree.h"
 
 #include <stdexcept>
@@ -40,13 +41,18 @@ compiler::document::document_snapshot::document_snapshot(
 
 compiler::document::document_snapshot compiler::document::document_snapshot::create_initial(std::string text)
 {
-  return document_snapshot(1, std::move(text));
+  std::shared_ptr<const compiler::syntax::syntax_tree> syntax_tree = compiler::syntax::lexer::lex(1, text);
+  return document_snapshot(1, std::move(text), syntax_tree);
 }
 
 compiler::document::document_snapshot compiler::document::document_snapshot::apply_change(
   const text_change& change) const
 {
-  return document_snapshot(m_generation + 1, apply_change_to_text(m_text, change));
+  const uint64_t next_generation = m_generation + 1;
+  std::string updated_text = apply_change_to_text(m_text, change);
+  std::shared_ptr<const compiler::syntax::syntax_tree> syntax_tree
+    = compiler::syntax::lexer::relex(next_generation, m_text, *m_syntax_tree, change, updated_text);
+  return document_snapshot(next_generation, std::move(updated_text), syntax_tree);
 }
 
 compiler::document::document_snapshot compiler::document::document_snapshot::with_syntax_tree(

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "syntax_diagnostic.h"
 #include "syntax_node.h"
 #include "syntax_token.h"
 
@@ -20,7 +21,8 @@ namespace compiler
         uint64_t source_generation,
         std::vector<syntax_node> nodes,
         std::vector<syntax_token> tokens,
-        std::optional<size_t> root_node_index);
+        std::optional<size_t> root_node_index,
+        std::vector<syntax_diagnostic> diagnostics = {});
 
       [[nodiscard]] static std::shared_ptr<const syntax_tree> create_empty(uint64_t source_generation);
 
@@ -33,6 +35,7 @@ namespace compiler
       [[nodiscard]] const syntax_token& get_token(size_t index) const;
       [[nodiscard]] size_t get_token_count() const;
       [[nodiscard]] const std::vector<syntax_token>& get_tokens() const;
+      [[nodiscard]] const std::vector<syntax_diagnostic>& get_diagnostics() const;
       [[nodiscard]] bool has_root() const;
 
     private:
@@ -40,6 +43,7 @@ namespace compiler
       std::vector<syntax_node> m_nodes;
       std::vector<syntax_token> m_tokens;
       std::optional<size_t> m_root_node_index;
+      std::vector<syntax_diagnostic> m_diagnostics;
     };
   }
 }

@@ -64,6 +64,7 @@ add_executable(mide
   src/compiler/document/document_snapshot.cpp
   src/compiler/document/line_index.cpp
   src/compiler/document/text_change.cpp
+  src/compiler/syntax/lexer.cpp
   src/compiler/syntax/syntax_support.cpp
   src/compiler/syntax/syntax_tree.cpp
   src/panels/assembly_panel.cpp
